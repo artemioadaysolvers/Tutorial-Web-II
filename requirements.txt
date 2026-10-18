@@ -1,2 +1,0 @@
-# SDK para almacenar documentos JSON en Azure Cosmos DB for NoSQL.
-azure-cosmos==4.17.0
