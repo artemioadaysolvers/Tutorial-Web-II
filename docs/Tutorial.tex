@@ -1,0 +1,29 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\newcommand{\campo}[1]{\texttt{\detokenize{#1}}}
+\title{Recados: inicio de sesión con GitHub en Azure}
+\date{}
+\begin{document}
+\maketitle
+\section{Conservar los recursos existentes}
+Mantener App Service, Cosmos DB, la base RecadosDB, el contenedor recados y sus reglas de red. No se necesita Microsoft Entra ID.
+\section{Registrar una aplicación OAuth en GitHub}
+\begin{enumerate}
+\item Abrir GitHub: Settings, Developer settings, OAuth Apps, New OAuth App.\\[0.2cm]
+\item Escribir Recados como nombre y la URL HTTPS pública de App Service como Homepage URL.\\[0.2cm]
+\item En Authorization callback URL, escribir la misma URL seguida de \campo{/auth/callback}. No habilitar Device Flow.\\[0.2cm]
+\item Registrar y copiar Client ID. Generar un secreto de cliente y guardarlo de forma privada.
+\end{enumerate}
+\section{Configurar App Service}
+En Variables de entorno, agregar \campo{GITHUB_CLIENT_ID} y \campo{GITHUB_CLIENT_SECRET}. Conservar \campo{SECRET_KEY}, \campo{APP_URL} y las variables de Cosmos. Retirar las variables \campo{MICROSOFT_CLIENT_ID}, \campo{MICROSOFT_CLIENT_SECRET} y \campo{MICROSOFT_TENANT}.
+Usar \campo{APP_URL} con HTTPS sin barra final. Para contenedor clásico, establecer \campo{WEBSITES_PORT} en 8080. Dejar el comando de inicio vacío y Easy Auth desactivado.
+\section{Actualizar y comprobar}
+Reemplazar los archivos del mismo repositorio conservando \campo{.git} y el workflow generado por Azure. Enviar los cambios a la rama configurada. Si aún no existe workflow, seguir la guía detallada \campo{docs/AZURE.md} para conectar GitHub Actions desde el Centro de implementación.
+Comprobar el despliegue, \campo{/health}, el acceso GitHub, la persistencia y el aislamiento entre cuentas. Cerrar sesión en Recados no cierra la sesión de github.com.
+\section{Guía detallada}
+Consultar \campo{docs/AZURE.md} para los valores exactos de este despliegue, firewall, planes, configuración inicial y diagnóstico.
+\end{document}
