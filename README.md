@@ -1,11 +1,11 @@
-# Recados — GitHub + Next.js + Python + Azure
+# Recados — TypeScript + Next.js + React + Azure
 
-Esta versión reemplaza el login de Microsoft por GitHub. Conserva Docker, Next.js/React, Flask y Cosmos DB. No requiere Entra ID ni permisos de la UAI. Cada visitante necesita una cuenta GitHub.
+Esta adaptación convierte el frontend existente a TypeScript estricto con Next.js y React. Conserva el diseño, los textos, el login GitHub, el backend Flask, Cosmos DB, Docker y el workflow de Azure del ZIP original. El backend sigue en Python para mantener la arquitectura y configuración existentes. No requiere cambios en las variables de Azure ni migraciones de datos.
 
 ## Actualizar tu repositorio
 
 1. Descomprimir el ZIP. Copiar TODO el contenido de esta carpeta a la raíz del mismo repositorio: Dockerfile debe quedar junto a server.py.
-2. Reemplazar los archivos existentes, incluyendo tests y docs. Conservar .git y el workflow .github/workflows que Azure haya creado. Este ZIP no incluye un pipeline: no borres el que ya funciona.
+2. Reemplazar los archivos existentes, incluyendo tests y docs. Conservar .git y el workflow .github/workflows que Azure haya creado. Este ZIP incluye el workflow original sin cambios: .github/workflows/main_web-recados-2026abc.yml. Asegúrate de copiar también la carpeta oculta .github.
 3. Seguir docs/AZURE.md antes de probar el login. Enviar los cambios a la rama de publicación activa el workflow solamente si ya está configurado.
 
 No recrear App Service, Cosmos DB, RecadosDB ni el contenedor recados. Mantener las reglas de firewall que agregaste.
@@ -22,6 +22,12 @@ Los recados antiguos creados con Microsoft no se vinculan automáticamente a Git
 
 python -m unittest discover -s tests -v
 
-En frontend: npm ci y npm run build. Docker realiza la construcción automáticamente. Los tests de identidad usan respuestas simuladas; la conexión real se verifica después de configurar las credenciales.
+En frontend: npm ci, npm run typecheck y npm run build. Docker realiza la construcción automáticamente. Los tests de identidad usan respuestas simuladas; la conexión real se verifica después de configurar las credenciales.
 
 No subir .env, credenciales, node_modules, .next ni frontend/out. Solo Python y Cosmos se ejecutan en producción: Node construye la exportación estática en Docker.
+
+## Cambios de esta adaptación
+
+Componentes app/page.tsx y app/layout.tsx; tipos de sesión, recados, formularios y referencias DOM; tsconfig.json estricto; next-env.d.ts; dependencias de TypeScript y tipos con versiones fijadas en package-lock.json. Se conservan las versiones originales de Next.js y React.
+
+Referencia de integración: https://nextjs.org/docs/app/api-reference/config/typescript
