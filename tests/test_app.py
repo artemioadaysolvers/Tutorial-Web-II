@@ -87,8 +87,50 @@ class AppTests(unittest.TestCase):
         from urllib.parse import urlparse, parse_qs
         query = parse_qs(urlparse(response.location).query)
         self.assertEqual(query['code_challenge_method'], ['S256'])
+        self.assertEqual(query['prompt'], ['select_account'])
+        self.assertEqual(query['redirect_uri'], ['https://example.test/auth/callback'])
+        self.assertNotIn('login', query)
         self.assertNotIn('secret', response.location)
         return query['state'][0]
+
+    def test_login_always_requests_account_selection(self):
+        self.login()
+        first = self.start_flow()
+        with self.client.session_transaction() as session:
+            self.assertNotIn('user', session)
+            self.assertNotIn('csrf', session)
+            verifier = session['flow']['verifier']
+        second = self.start_flow()
+        self.assertNotEqual(first, second)
+        with self.client.session_transaction() as session:
+            self.assertNotEqual(verifier, session['flow']['verifier'])
+
+    def test_save_without_session_then_login_requests_account_selection(self):
+        self.assertEqual(self.add('Borrador').status_code, 401)
+        self.start_flow()
+        self.assertEqual(self.store.rows, {})
+
+    @patch('server.urlopen')
+    def test_logout_then_login_with_different_github_account(self, remote):
+        import io, json, hashlib
+        for uid, name in ((123, 'Ana'), (456, 'Luis')):
+            state = self.start_flow()
+            remote.side_effect = [io.BytesIO(b'{"access_token":"TOKEN"}'),
+                io.BytesIO(json.dumps({'id':uid, 'login':name.lower(), 'name':name}).encode())]
+            self.assertEqual(self.client.get('/auth/callback', query_string={'state':state,'code':'CODE'}).status_code, 302)
+            self.assertEqual(self.client.get('/api/recados').json['recados'], [])
+            csrf = self.client.get('/api/session').json['csrf']
+            self.assertEqual(self.client.post('/api/recados', json={'body':name}, headers={'X-CSRF-Token':csrf}).status_code, 201)
+            with self.client.session_transaction() as session:
+                self.assertEqual(session['user']['id'], hashlib.sha256(('github|' + str(uid)).encode()).hexdigest())
+            self.assertEqual(self.client.post('/auth/logout', headers={'X-CSRF-Token':csrf}).status_code, 302)
+            self.assertIsNone(self.client.get('/api/session').json['user'])
+        self.assertEqual(len(self.store.rows), 2)
+
+    def test_logout_requires_csrf_and_preserves_session_when_rejected(self):
+        self.login()
+        self.assertEqual(self.client.post('/auth/logout').status_code, 403)
+        self.assertEqual(self.client.get('/api/session').json['user']['name'], 'Persona')
 
     @patch('server.urlopen')
     def test_github_callback(self, remote):

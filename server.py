@@ -121,7 +121,7 @@ def create_app(config=None, store=None):
         session['flow_started'] = datetime.now(timezone.utc).timestamp()
         query = urlencode({'client_id': app.config['GITHUB_CLIENT_ID'],
             'redirect_uri': app.config['APP_URL'] + '/auth/callback',
-            'state': state, 'scope': '', 'code_challenge': challenge,
+            'state': state, 'scope': '', 'prompt': 'select_account', 'code_challenge': challenge,
             'code_challenge_method': 'S256'})
         return redirect('https://github.com/login/oauth/authorize?' + query)
 

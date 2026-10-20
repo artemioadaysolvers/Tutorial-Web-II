@@ -1,6 +1,6 @@
 # Typewriter · Next.js + React + TypeScript
 
-Máquina de escribir con el fondo beige del PDF (#f2e8cf), texto marrón, sonidos originales y guardado privado con GitHub y Cosmos DB. El frontend sigue en TypeScript estricto, Next.js y React; el backend Flask sirve la exportación de Next.js como en el proyecto original.
+Editor de escritura con una presentación sobria, fondo beige (#f2e8cf), texto marrón y la tipografía typewriter original (Courier New, Courier, monospace) en toda la interfaz, incluidos los títulos. Conserva los sonidos originales y el guardado privado con GitHub y Cosmos DB. El frontend sigue en TypeScript estricto, Next.js y React; el backend Flask sirve la exportación de Next.js como en el proyecto original.
 
 ## Subir al Azure existente
 
@@ -15,7 +15,7 @@ Los secretos de GitHub Actions están asociados al repositorio actual. Crear otr
 ## Uso
 
 - Escribe directamente en la hoja, incluso antes de iniciar sesión. Límite de 2000 caracteres, igual que el proyecto original.
-- Guardar o Ctrl/Cmd + S guarda en tu cuenta. Si no has iniciado sesión, el borrador se conserva temporalmente en esta pestaña mientras entras con el acceso GitHub existente. Al volver, pulsa Guardar texto.
+- Guardar o Ctrl/Cmd + S guarda en tu cuenta. Si no has iniciado sesión, el borrador se conserva temporalmente en esta pestaña mientras eliges con qué cuenta entrar en GitHub. Al volver, revisa la cuenta indicada y pulsa Guardar texto. También se solicita elegir cuenta si la sesión venció justo al guardar; el borrador se conserva.
 - Pulsa un texto en Mis textos para volver a abrirlo. Si lo modificas, Guardar copia crea un texto nuevo y conserva el anterior.
 - Nueva hoja comienza otro texto. El navegador pide confirmación al reemplazar cambios sin guardar.
 - Descargar .txt permite guardar una copia local, también sin iniciar sesión.
@@ -28,7 +28,11 @@ Los espacios iniciales, líneas vacías y saltos finales se conservan al guardar
 
 El backend valida state, limita el flujo a 10 minutos y utiliza PKCE S256. Intercambia el código con GitHub y consulta /user para obtener el identificador numérico estable de la cuenta; no usa el nombre ni el correo como propietario. No solicita acceso a repositorios privados ni a correos. El token se utiliza en el servidor y no se guarda en cookies ni en Cosmos.
 
-Cerrar sesión termina la sesión de Recados en ese navegador; no cierra la cuenta de github.com. Las sesiones están firmadas, usan HttpOnly, SameSite=Lax y Secure en HTTPS, con vencimiento tras 8 horas de inactividad. Las operaciones de escritura requieren CSRF. Cambiar SECRET_KEY invalida las sesiones. No hay revocación central de cookies robadas.
+Cerrar sesión termina la sesión de Typewriter en ese navegador; no cierra la cuenta de github.com. Por eso antes GitHub reutilizaba la cuenta activa: la solicitud OAuth no pedía mostrar el selector. Ahora /auth/login envía siempre prompt=select_account, tanto desde Entrar con GitHub como desde Guardar sin sesión o con sesión vencida. GitHub muestra su selector para continuar con una cuenta o acceder con otra. Esto no obliga a escribir la contraseña si GitHub ya tiene una sesión válida.
+
+Referencia oficial: https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps (parámetro prompt).
+
+El cierre de sesión mantiene el texto si la petición falla y evita una segunda advertencia de salida tras confirmar los cambios sin guardar. Las sesiones están firmadas, usan HttpOnly, SameSite=Lax y Secure en HTTPS, con vencimiento tras 8 horas de inactividad. Las operaciones de escritura requieren CSRF. Cambiar SECRET_KEY invalida las sesiones. No hay revocación central de cookies robadas.
 
 Los recados ya creados con GitHub aparecen como textos guardados. Los recados antiguos creados con Microsoft no se vinculan automáticamente a GitHub porque son identidades distintas. No se eliminan, pero necesitarían una migración verificada para aparecer con otra identidad.
 

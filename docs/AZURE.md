@@ -1,4 +1,12 @@
-# Configurar GitHub y publicar en el Azure existente
+# Publicar en el Azure existente
+
+## Actualizar una instalación que ya funciona
+
+Esta actualización se publica reemplazando los archivos del mismo repositorio conectado a Azure, incluida .github, y enviando los cambios a su rama de despliegue. No subas el ZIP como un solo archivo. Conserva .git y los secretos del repositorio.
+
+El Dockerfile, el workflow de Azure, las dependencias, el puerto 8080, las variables de entorno, el callback /auth/callback y el esquema de Cosmos DB se mantienen sin cambios. El selector de cuentas se solicita desde el código con prompt=select_account: no requiere cambiar Azure ni registrar otra OAuth App.
+
+Las secciones siguientes son la guía de configuración inicial del proyecto original. No es necesario repetirlas si el sitio ya inicia sesión y guarda correctamente. No modifiques recursos ni variables de una instalación funcional por esta actualización.
 
 ## 1. Registrar el login (OAuth App, no un repositorio nuevo)
 
@@ -38,7 +46,7 @@ Reemplazar el contenido del mismo repositorio y hacer Commit/Push a main (o a la
 
 Si el despliegue automático aún no está configurado, abrir App Service > Centro de implementación > Configuración, conectar GitHub Actions y elegir el repositorio y rama. Elegir ACR como destino, imagen recados, Dockerfile de la raíz y contexto '.'. Revisar la vista previa: debe construir Docker, publicar en ACR y actualizar el contenedor. Completar la autenticación exigida por esa plantilla y guardar. No usar una plantilla de publicación directa de código Python. Las opciones y permisos dependen de tu portal; si no aparece esa integración, revisar la configuración antes de crear otro plan o recurso.
 
-Azure debe agregar .github/workflows al repositorio. Descargar su commit con Fetch/Pull en GitHub Desktop. Este ZIP no genera ni sustituye ese archivo. La primera ejecución debe reemplazar la imagen temporal mcr.microsoft.com/k8se/quickstart:latest; mientras esa imagen siga activa, todavía no está desplegada Recados.
+Azure debe agregar .github/workflows al repositorio. Descargar su commit con Fetch/Pull en GitHub Desktop. El ZIP incluye el workflow original; si tu repositorio tiene una versión más reciente que ya funciona, conserva esa versión. La primera ejecución debe reemplazar la imagen temporal mcr.microsoft.com/k8se/quickstart:latest; mientras esa imagen siga activa, todavía no está desplegada Recados.
 
 F1 es para pruebas y tiene límites de CPU/memoria y sin Always On; puede haber arranques lentos o suspensión por cuota. Usarlo si el portal admite tu contenedor Linux en F1. No contratar B1 para seguir estas instrucciones sin revisar su precio. ACR Basic se cobra por separado. Cosmos conserva su nivel gratuito solo dentro de los límites aplicables.
 
@@ -47,7 +55,7 @@ F1 es para pruebas y tiene límites de CPU/memoria y sin Always On; puede haber 
 1. Revisar GitHub > Actions: construcción y despliegue correctos.
 2. Abrir APP_URL/health: debe responder {"status":"ok"}.
 3. Abrir la web, entrar con GitHub y guardar un recado.
-4. Cerrar sesión y volver a entrar con la misma cuenta: debe persistir.
+4. Cerrar sesión y volver a entrar: GitHub debe mostrar el selector de cuentas. Si eliges la misma cuenta, sus textos deben persistir.
 5. Con otra cuenta GitHub, comprobar que no ve ni puede borrar los recados anteriores.
 6. Probar el borrado de un recado propio.
 
