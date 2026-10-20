@@ -2,6 +2,8 @@
 
 Editor de escritura con una presentación sobria, fondo beige (#f2e8cf), texto marrón y la tipografía typewriter original (Courier New, Courier, monospace) en toda la interfaz, incluidos los títulos. Conserva los sonidos originales y el guardado privado con GitHub y Cosmos DB. El frontend sigue en TypeScript estricto, Next.js y React; el backend Flask sirve la exportación de Next.js como en el proyecto original.
 
+El encabezado está dedicado a apuntes de Ingeniería Civil e ideas de modelamiento matemático para la tesis. Se retiraron las etiquetas 01 / LA HOJA y 02 / EL ARCHIVO. Los espacios junto al encabezado y bajo el archivo llevan ecuaciones decorativas de difusión del calor, Fourier, Biot–Savart, Coulomb, Faraday–Lenz y fuerza magnética. Los fondos SVG locales conservan la estructura del HTML y la fuente typewriter, no cubren el editor y no requieren dependencias ni cambios en Azure.
+
 ## Subir al Azure existente
 
 1. Descomprime este ZIP y copia el CONTENIDO de su carpeta a la raíz del MISMO repositorio. Dockerfile debe quedar junto a server.py. Copia también la carpeta oculta .github.
@@ -32,7 +34,9 @@ Cerrar sesión termina la sesión de Typewriter en ese navegador; no cierra la c
 
 Referencia oficial: https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps (parámetro prompt).
 
-El cierre de sesión mantiene el texto si la petición falla y evita una segunda advertencia de salida tras confirmar los cambios sin guardar. Las sesiones están firmadas, usan HttpOnly, SameSite=Lax y Secure en HTTPS, con vencimiento tras 8 horas de inactividad. Las operaciones de escritura requieren CSRF. Cambiar SECRET_KEY invalida las sesiones. No hay revocación central de cookies robadas.
+El cierre de sesión mantiene el texto si la petición falla y evita una segunda advertencia de salida tras confirmar los cambios sin guardar. Se completa con una respuesta 204 y actualiza la pantalla sin redirecciones. Si otra pestaña cambió la sesión o venció el CSRF, recupera el token y reintenta una sola vez dentro de la misma pulsación. Las cargas de sonidos y otras lecturas ya no renuevan la cookie: una respuesta tardía no puede volver a iniciar la sesión que acabas de cerrar.
+
+Las sesiones están firmadas, usan HttpOnly, SameSite=Lax y Secure en HTTPS, con vencimiento hasta 8 horas después de iniciar sesión, sin renovación por cargar recursos. Las operaciones de escritura requieren CSRF. Cambiar SECRET_KEY invalida las sesiones. No hay revocación central de cookies robadas.
 
 Los recados ya creados con GitHub aparecen como textos guardados. Los recados antiguos creados con Microsoft no se vinculan automáticamente a GitHub porque son identidades distintas. No se eliminan, pero necesitarían una migración verificada para aparecer con otra identidad.
 

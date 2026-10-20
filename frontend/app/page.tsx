@@ -40,6 +40,7 @@ export default function Home() {
   const audio = useRef<Record<Sound, HTMLAudioElement[]>>({ boton: [], teclado: [] });
   const audioIndex = useRef<Record<Sound, number>>({ boton: 0, teclado: 0 });
   const leaving = useRef(false);
+  const logoutBusy = useRef(false);
   const hasChanges = body.length > 0 && body !== savedBody;
   const words = body.trim() ? body.trim().split(/\s+/u).length : 0;
 
@@ -128,17 +129,29 @@ export default function Home() {
 
   async function logout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loggingOut) return;
+    if (logoutBusy.current) return;
     if (hasChanges && !window.confirm('Tienes cambios sin guardar. ¿Quieres cerrar sesión?')) return;
-    setLoggingOut(true); setStatus('');
+    logoutBusy.current = true;
+    setLoggingOut(true); setStatus('Cerrando sesión…');
     try {
-      const response = await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': csrf.current } });
+      const endSession = () => fetch('/auth/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'application/json', 'X-CSRF-Token': csrf.current } });
+      let response = await endSession();
+      if (response.status === 403) {
+        // Another tab may have changed the session. Refresh CSRF once within
+        // this same click; never require the user to press Logout again.
+        const current = await api<SessionResponse>('/api/session');
+        csrf.current = current.csrf;
+        response = await endSession();
+      }
       if (!response.ok) throw new Error('No se pudo cerrar la sesión. Vuelve a intentarlo.');
       try { sessionStorage.removeItem('typewriter-pending'); } catch { /* Storage is optional. */ }
-      leaving.current = true;
-      window.location.replace('/');
+      csrf.current = '';
+      setAccount(null); setNotes([]); setBody(''); setSavedBody(null); setSelected(null);
+      setFailed(false); setStatus('Sesión cerrada. Puedes entrar con otra cuenta de GitHub.');
     } catch (error) {
       setStatus(errorMessage(error, 'No se pudo cerrar la sesión. Tu texto sigue aquí.'));
+    } finally {
+      logoutBusy.current = false;
       setLoggingOut(false);
     }
   }
@@ -204,17 +217,17 @@ export default function Home() {
       <div className="header-actions"><button className="sound-toggle" aria-pressed={sound} onClick={toggleSound} title={sound ? 'Desactivar sonidos' : 'Activar sonidos'}><span aria-hidden="true">{sound ? '◖))' : '◖×'}</span><span>Sonido {sound ? 'activado' : 'desactivado'}</span></button>{ready && (account ? <form action="/auth/logout" method="post" onSubmit={logout}><input type="hidden" name="csrf" value={csrf.current}/><button className="secondary" disabled={loggingOut || saving}>{loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</button></form> : <button className="secondary" onClick={login}>Entrar con GitHub</button>)}</div>
     </header>
     <main>
-      <section className="heading"><div><p className="eyebrow">TU ESPACIO DE ESCRITURA</p><h1>Escribe con claridad.<br/>Conserva tus ideas.</h1><p className="intro">Un editor sencillo para redactar y organizar tus textos.</p></div><div className="heading-note"><p>{account ? <>Sesión iniciada<br/><strong>{account.name}</strong></> : <>Acceso con GitHub<br/>Elige tu cuenta al entrar.</>}</p></div></section>
+      <section className="heading"><div><p className="eyebrow">MODELAMIENTO MATEMÁTICO</p><h1>Máquina de Escribir<br/>para apuntes de Ingeniería Civil</h1><p className="intro">Redacta las ideas de modelamiento matemático que utilizarás en tu tesis.</p></div><div className="heading-note"><p>{account ? <>Sesión iniciada<br/><strong>{account.name}</strong></> : <>Acceso con GitHub<br/>Elige tu cuenta al entrar.</>}</p></div></section>
       <div className="workspace">
         <section className="compose" aria-label="Máquina de escribir">
-          <div className="machine-toolbar"><span className="number">01 / LA HOJA</span><button className="text-button" onClick={newPage} disabled={saving}>+ Nueva hoja</button></div>
+          <div className="machine-toolbar"><span className="number" aria-hidden="true"/><button className="text-button" onClick={newPage} disabled={saving}>+ Nueva hoja</button></div>
           <form ref={form} onSubmit={save}>
             <div className="paper"><div className="paper-heading"><label htmlFor="body">{selected ? 'TEXTO DE TU COLECCIÓN' : 'NUEVO TEXTO'}</label><span>NO. {String(selected ? Math.max(1, notes.findIndex(note => note.id === selected) + 1) : notes.length + 1).padStart(3, '0')}</span></div><textarea ref={field} id="body" maxLength={2000} rows={14} placeholder="Escribe tu texto aquí…" value={body} onChange={event => setBody(event.target.value)} onKeyDown={keySound} spellCheck lang="es" aria-describedby="editor-hint character-count"/><div className="paper-bottom"><span>{words} {words === 1 ? 'palabra' : 'palabras'}</span><span id="character-count">{body.length} / 2000 caracteres</span></div></div>
             <div className="form-footer"><div className="save-state"><span className={body && body === savedBody ? 'dot saved' : 'dot'}/>{body && body === savedBody ? 'Guardado en tu cuenta' : hasChanges ? 'Cambios sin guardar' : 'Lista para tus ideas'}</div><div className="editor-actions"><button className="secondary" type="button" disabled={!body.length} onClick={download} aria-label="Descargar texto como archivo TXT">Descargar .txt ↓</button><button className="primary" type="submit" disabled={!ready || failed || saving || loggingOut || !body.trim() || body === savedBody}>{saving ? 'Guardando…' : !account ? 'Entrar y guardar ↗' : selected ? 'Guardar copia +' : 'Guardar texto +'}</button></div></div>
           </form>
           <p className="hint" id="editor-hint">{account ? 'Tus textos se guardan en tu cuenta. Solo tú puedes verlos.' : 'Al guardar, GitHub te permitirá elegir una cuenta. Tu borrador se conservará en esta pestaña.'}<span>Ctrl / ⌘ + S para guardar</span></p>
         </section>
-        <aside className="collection" aria-labelledby="collection-title"><div className="list-heading"><span className="number">02 / EL ARCHIVO</span><span className="count">{notes.length.toString().padStart(2, '0')}</span></div><h2 id="collection-title">Mis textos</h2><p className="collection-intro">Tu archivo personal.</p>
+        <aside className="collection" aria-labelledby="collection-title"><div className="list-heading"><span className="number" aria-hidden="true"/><span className="count">{notes.length.toString().padStart(2, '0')}</span></div><h2 id="collection-title">Mis textos</h2><p className="collection-intro">Tu archivo personal.</p>
           {!ready ? <div className="empty"><span className="empty-icon"><TypewriterIcon/></span><h3>Preparando tu espacio…</h3></div> : !notes.length && <div className="empty"><span className="empty-icon"><TypewriterIcon/></span><h3>{account ? 'Sin textos guardados.' : 'Inicia sesión para ver tu archivo.'}</h3><p>{account ? <>Los textos que guardes<br/>aparecerán aquí.</> : <>Accede con tu cuenta de GitHub<br/>para consultar y guardar textos.</>}</p></div>}
           <div className="notes">{notes.map((note, index) => <article className={`note${selected === note.id ? ' selected' : ''}`} key={note.id}><button className="note-open" onClick={() => open(note)} aria-label={`Abrir texto: ${note.body.slice(0, 60)}`}><span className="note-number">TEXTO {String(notes.length - index).padStart(3, '0')} <span aria-hidden="true">↗</span></span><p>{note.body}</p></button><div className="note-footer"><time dateTime={note.created}>{new Date(note.created).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}</time><button className="delete" aria-label={`Borrar texto: ${note.body.slice(0,60)}`} disabled={deleting !== null} onClick={() => remove(note)}>{deleting === note.id ? 'Borrando…' : 'Borrar'}</button></div></article>)}</div>
           <div className="archive-foot"><p>Archivo privado.<br/>Vinculado a tu cuenta de GitHub.</p></div>

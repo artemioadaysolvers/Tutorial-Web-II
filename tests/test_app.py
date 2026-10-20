@@ -195,6 +195,36 @@ class AppTests(unittest.TestCase):
         self.login()
         self.assertEqual(self.client.post('/auth/logout',data={'csrf':'test-csrf'}).status_code,302)
         self.assertEqual(self.client.get('/api/recados').status_code,401)
+
+    def test_background_requests_do_not_reissue_authenticated_cookie(self):
+        self.login()
+        with self.client.session_transaction() as session:
+            session.permanent = True
+        for path in ('/', '/api/session', '/api/recados', '/static/sounds/boton.wav'):
+            with self.subTest(path=path), self.client.get(path) as response:
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn('Set-Cookie', response.headers)
+
+    def test_ajax_logout_deletes_cookie_without_redirect(self):
+        self.login()
+        with self.client.session_transaction() as session:
+            session.permanent = True
+        response = self.client.post('/auth/logout', headers={
+            'Accept': 'application/json', 'X-CSRF-Token': 'test-csrf'})
+        self.assertEqual(response.status_code, 204)
+        self.assertNotIn('Location', response.headers)
+        self.assertIn('Max-Age=0', response.headers['Set-Cookie'])
+        self.assertIsNone(self.client.get('/api/session').json['user'])
+
+    def test_logout_with_refreshed_csrf_after_session_changes(self):
+        self.login()
+        with self.client.session_transaction() as session:
+            session['csrf'] = 'changed-in-another-tab'
+        headers = {'Accept': 'application/json', 'X-CSRF-Token': 'test-csrf'}
+        self.assertEqual(self.client.post('/auth/logout', headers=headers).status_code, 403)
+        headers['X-CSRF-Token'] = self.client.get('/api/session').json['csrf']
+        self.assertEqual(self.client.post('/auth/logout', headers=headers).status_code, 204)
+        self.assertIsNone(self.client.get('/api/session').json['user'])
     def test_health(self):
         self.assertEqual(self.client.get('/health').json,{'status':'ok'})
 

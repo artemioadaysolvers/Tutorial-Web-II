@@ -24,7 +24,10 @@ def create_app(config=None, store=None):
         APP_URL=os.getenv('APP_URL','').rstrip('/'),
         FRONTEND_DIR=str(Path(__file__).parent/'frontend'/'out'),
         MAX_CONTENT_LENGTH=16384, SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE='Lax', PERMANENT_SESSION_LIFETIME=timedelta(hours=8))
+        SESSION_COOKIE_SAMESITE='Lax', PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+        # Read-only requests (including audio) must not reissue an authenticated
+        # cookie after a concurrent logout has deleted it.
+        SESSION_REFRESH_EACH_REQUEST=False)
     if config:
         app.config.update(config)
     if not app.secret_key or len(app.secret_key) < 32 or app.secret_key.startswith('REEMPLAZAR'):
@@ -161,6 +164,8 @@ def create_app(config=None, store=None):
     @app.post('/auth/logout')
     def logout():
         session.clear()
+        if request.accept_mimetypes.best == 'application/json':
+            return '', 204
         return redirect('/')
 
     @app.get('/api/recados')
