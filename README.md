@@ -1,4 +1,4 @@
-# Recados — TypeScript + Next.js + React + Azure
+# Recados — TypeScript + Next.js + React + Azure 
 
 Esta adaptación convierte el frontend existente a TypeScript estricto con Next.js y React. Conserva el diseño, los textos, el login GitHub, el backend Flask, Cosmos DB, Docker y el workflow de Azure del ZIP original. El backend sigue en Python para mantener la arquitectura y configuración existentes. No requiere cambios en las variables de Azure ni migraciones de datos.
 
