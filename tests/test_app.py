@@ -59,6 +59,17 @@ class AppTests(unittest.TestCase):
         self.login()
         for body in (' ','x'*2001,34,None):
             self.assertEqual(self.add(body).status_code,400)
+    def test_typewriter_preserves_layout(self):
+        self.login()
+        body='  Primera línea\n\n    Segunda línea\n'
+        self.assertEqual(self.add(body).json['recado']['body'],body)
+        self.assertEqual(self.client.get('/api/recados').json['recados'][0]['body'],body)
+        self.assertEqual(self.add('x'+' '*2000).status_code,400)
+    def test_original_sound_assets_are_served(self):
+        for name in ('boton','teclado'):
+            with self.subTest(name=name), self.client.get('/static/sounds/'+name+'.wav') as response:
+                self.assertEqual(response.status_code,200)
+                self.assertTrue(response.get_data().startswith(b'RIFF'))
     def test_content_and_headers(self):
         self.login()
         self.assertEqual(self.add('<script>alert(1)</script>').json['recado']['body'],'<script>alert(1)</script>')

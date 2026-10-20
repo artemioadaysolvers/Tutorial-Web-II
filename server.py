@@ -171,16 +171,16 @@ def create_app(config=None, store=None):
     def add_note():
         data=request.get_json(silent=True)
         body=data.get('body') if isinstance(data,dict) else None
-        if not isinstance(body,str) or not 1<=len(body.strip())<=2000:
-            return jsonify(error='Escribe un recado de 1 a 2000 caracteres.'),400
-        note={'id':str(uuid4()),'owner':session['user']['id'],'body':body.strip(),'created':datetime.now(timezone.utc).isoformat()}
+        if not isinstance(body,str) or not body.strip() or not 1<=len(body)<=2000:
+            return jsonify(error='Escribe un texto de 1 a 2000 caracteres.'),400
+        note={'id':str(uuid4()),'owner':session['user']['id'],'body':body,'created':datetime.now(timezone.utc).isoformat()}
         store.save(note)
         return jsonify(recado={k:v for k,v in note.items() if k!='owner'}),201
 
     @app.delete('/api/recados/<uuid:id>')
     def delete_note(id):
         if not store.delete(session['user']['id'],str(id)):
-            return jsonify(error='Recado no encontrado.'),404
+            return jsonify(error='Texto no encontrado.'),404
         return '',204
 
     @app.get('/health')

@@ -1,0 +1,10 @@
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/tsconfig.tsbuildinfo
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.venv/

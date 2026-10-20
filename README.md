@@ -1,33 +1,44 @@
-# Recados — TypeScript + Next.js + React + Azure
+# Typewriter · Next.js + React + TypeScript
 
-Esta adaptación convierte el frontend existente a TypeScript estricto con Next.js y React. Conserva el diseño, los textos, el login GitHub, el backend Flask, Cosmos DB, Docker y el workflow de Azure del ZIP original. El backend sigue en Python para mantener la arquitectura y configuración existentes. No requiere cambios en las variables de Azure ni migraciones de datos.
+Máquina de escribir con el fondo beige del PDF (#f2e8cf), texto marrón, sonidos originales y guardado privado con GitHub y Cosmos DB. El frontend sigue en TypeScript estricto, Next.js y React; el backend Flask sirve la exportación de Next.js como en el proyecto original.
 
-## Actualizar tu repositorio
+## Subir al Azure existente
 
-1. Descomprimir el ZIP. Copiar TODO el contenido de esta carpeta a la raíz del mismo repositorio: Dockerfile debe quedar junto a server.py.
-2. Reemplazar los archivos existentes, incluyendo tests y docs. Conservar .git y el workflow .github/workflows que Azure haya creado. Este ZIP incluye el workflow original sin cambios: .github/workflows/main_web-recados-2026abc.yml. Asegúrate de copiar también la carpeta oculta .github.
-3. Seguir docs/AZURE.md antes de probar el login. Enviar los cambios a la rama de publicación activa el workflow solamente si ya está configurado.
+1. Descomprime este ZIP y copia el CONTENIDO de su carpeta a la raíz del MISMO repositorio. Dockerfile debe quedar junto a server.py. Copia también la carpeta oculta .github.
+2. Conserva tu carpeta .git. El workflow original .github/workflows/main_web-recados-2026abc.yml está incluido sin modificaciones. Si tu repositorio tiene una versión más reciente de ese workflow, conserva la que ya funciona.
+3. Haz commit y push a la rama de despliegue (main en el workflow incluido). No subas el ZIP como un único archivo ni crees recursos nuevos en Azure.
 
-No recrear App Service, Cosmos DB, RecadosDB ni el contenedor recados. Mantener las reglas de firewall que agregaste.
+Esta actualización no requiere cambiar variables de entorno, secretos, puerto, imagen, OAuth ni esquema de Cosmos DB. Conserva GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, APP_URL, SECRET_KEY, COSMOS_ENDPOINT, COSMOS_KEY, COSMOS_DATABASE, COSMOS_CONTAINER y WEBSITES_PORT exactamente como estén en tu despliegue funcional. Mantiene los valores predeterminados RecadosDB y recados, la partición owner y las rutas /api/recados. Los nombres internos Account, Note, account, notes, body, csrf, save y remove también se mantienen. Los recados que ya existían aparecen como textos guardados.
 
-## Funcionamiento
+Los secretos de GitHub Actions están asociados al repositorio actual. Crear otro repositorio no transfiere esos secretos. Para mantener Azure sin cambios, reemplaza los archivos en el repositorio ya conectado.
 
-El backend valida state, limita el flujo a 10 minutos y utiliza PKCE S256. Intercambia el código con GitHub y consulta /user para obtener el identificador numérico estable de la cuenta; no usa el nombre ni el correo como propietario. No solicita acceso a repositorios privados ni a correos. El token se utiliza en el servidor y no se guarda en cookies ni en Cosmos.
+## Uso
 
-Cerrar sesión termina la sesión de Recados en ese navegador; no cierra la cuenta de github.com. Las sesiones están firmadas, usan HttpOnly, SameSite=Lax y Secure en HTTPS, con vencimiento tras 8 horas de inactividad. Las operaciones de escritura requieren CSRF. Cambiar SECRET_KEY invalida las sesiones. No hay revocación central de cookies robadas.
+- Escribe directamente en la hoja, incluso antes de iniciar sesión. Límite de 2000 caracteres, igual que el proyecto original.
+- Guardar o Ctrl/Cmd + S guarda en tu cuenta. Si no has iniciado sesión, el borrador se conserva temporalmente en esta pestaña mientras entras con el acceso GitHub existente. Al volver, pulsa Guardar texto.
+- Pulsa un texto en Mis textos para volver a abrirlo. Si lo modificas, Guardar copia crea un texto nuevo y conserva el anterior.
+- Nueva hoja comienza otro texto. El navegador pide confirmación al reemplazar cambios sin guardar.
+- Descargar .txt permite guardar una copia local, también sin iniciar sesión.
+- Cada botón reproduce static/sounds/boton.wav. Cada pulsación de tecla dentro del editor reproduce static/sounds/teclado.wav. El control Sonido activa o silencia ambos; recuerda tu preferencia en este navegador. Los WAV se incluyen sin modificaciones.
+- Borrar elimina un texto de tu colección después de confirmar.
 
-Los recados antiguos creados con Microsoft no se vinculan automáticamente a GitHub: son identidades distintas. No se eliminan, pero necesitarían una migración verificada para aparecer con otra identidad.
+Los espacios iniciales, líneas vacías y saltos finales se conservan al guardar. No hay guardado automático en Cosmos: usa Guardar texto. Si falla una operación, el texto permanece en el editor.
 
-## Pruebas
+## Desarrollo y comprobación
 
-python -m unittest discover -s tests -v
+En frontend:
 
-En frontend: npm ci, npm run typecheck y npm run build. Docker realiza la construcción automáticamente. Los tests de identidad usan respuestas simuladas; la conexión real se verifica después de configurar las credenciales.
+    npm ci
+    npm run typecheck
+    npm run build
 
-No subir .env, credenciales, node_modules, .next ni frontend/out. Solo Python y Cosmos se ejecutan en producción: Node construye la exportación estática en Docker.
+En la raíz:
 
-## Cambios de esta adaptación
+    python -m pip install -r requirements.txt
+    python -m unittest discover -s tests -v
 
-Componentes app/page.tsx y app/layout.tsx; tipos de sesión, recados, formularios y referencias DOM; tsconfig.json estricto; next-env.d.ts; dependencias de TypeScript y tipos con versiones fijadas en package-lock.json. Se conservan las versiones originales de Next.js y React.
+Docker construye Next.js y ejecuta Flask/Gunicorn en el puerto 8080 como antes. No subas node_modules, .next, frontend/out, credenciales ni archivos .env. Los sonidos se sirven mediante la ruta /static ya existente, y cumplen la política de contenido del servidor.
 
-Referencia de integración: https://nextjs.org/docs/app/api-reference/config/typescript
+Las pruebas verifican autenticación, CSRF, aislamiento entre usuarios, guardado fiel del texto, archivos de sonido y exportación de Next.js. La autenticación real y el Cosmos de tu cuenta se comprueban después del despliegue; las pruebas locales usan una base en memoria aislada.
+
+Consulta docs/AZURE.md para los detalles conservados de la instalación original y docs/VALIDACION.md para las comprobaciones de esta adaptación.
