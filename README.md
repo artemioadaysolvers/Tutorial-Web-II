@@ -1,6 +1,6 @@
 Tutorial para App Web II
 
-Tutorial para desarrollo y publicación de una aplicación web en Microsoft Azure utilizando GitHub Desktop, con un backend desarrollado en Python y un frontend desarrollado en TypeScript mediante Next.js, React y Node.js. La aplicación incorpora Docker, una base de datos y un sistema de inicio de sesión mediante autenticación con cuentas de GitHub, además de un sistema de despliegue automático desde GitHub mediante GitHub Actions. Asimismo, el tutorial enseña a utilizar GitHub Desktop para administrar el repositorio
+Tutorial para desarrollo y publicación de una aplicación web en Microsoft Azure con un backend desarrollado en Python y un frontend desarrollado en TypeScript mediante Next.js, React y Node.js. La aplicación incorpora Docker, una base de datos y un sistema de inicio de sesión mediante autenticación con cuentas de GitHub, además de un sistema de despliegue automático mediante GitHub Actions. Asimismo, el tutorial enseña a utilizar GitHub Desktop para administrar el repositorio
 
 Profesor: Martín Céspedes Escuti
 
